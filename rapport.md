@@ -1,0 +1,94 @@
+---
+title: "Constraint Programming Optimization"
+author: "PATYK Jonathan / ROUABAH Walid"
+date: "10 April 2026"
+geometry: margin=2.5cm
+toc: false
+numbersections: false
+colorlinks: true
+linkcolor: blue
+urlcolor: blue
+header-includes:
+  - \usepackage{setspace}
+  - \onehalfspacing
+---
+
+
+## 1st Problem : Frequency Allocation
+
+TODO
+
+## 2nd Problem : Integrated Healthcare Timetabling Competition (IHTC 2024)
+
+### 1. Description 
+
+This project focuses on modeling and solving a simplified version of the scheduling problem introduced in the IHTC 2024, using Constraint Programming. The objective is to schedule the admission of patients into a hospital over a given planning horizon.
+
+For each admitted patient, the model must determine:
+
+  - The admission day.
+
+  - The assigned room.
+
+  - The assigned operating theater.
+
+By respecting some hard constraints given in the competition.
+
+
+### 2. Model 
+
+Decision Variables :
+
+```python
+x_admitted[i]: 1 if patient $i$ is admitted, 0 otherwise.
+
+x_day[i][d]: 1 if patient $i$ is admitted on day $d$.
+
+x_room[i][r]: 1 if patient $i$ is assigned to room $r$.
+
+x_ot[i][o]: 1 if patient $i$ is assigned to operating theater $o$.
+
+```
+
+Sum constraints iterate over the planning to ensure that daily room capacities, OT availabilities and surgeon schedules are not exceeded. \newline
+Gender mixing is prevented by enforcing that the sum of males or the sum of females in a room on any given day is strictly zero. \newline
+
+Objective function :
+```python
+unplanned_optionals = [
+    (1 - x_admitted[i]) for i, p in enumerate(patients_data) if not p.get("mandatory", False)
+]
+minimize(Sum(unplanned_optionals))
+```
+This corresponds to the S8 objective, which aims to minimize the number of unscheduled non-mandatory patients
+
+### 3. Problems Encountered
+
+**Handling JSON Parsing Errors:** We couldn't use PyCSP3's standard -data= because it crashes on the asymmetric IHTC 
+JSON files (e.g. missing keys like incompatible_room_ids cause a NamedTuple TypeError). To get around this 
+limitation, we handled the JSON parsing manually and passed the file path through our own -mydata= argument instead
+
+### 4. Optimization 
+
+**Pre-filtering**
+To handle massive instances we introduced a pre-filtering step. Before generating constraints, we analyze the input data to identify days where a patient's surgeon is unavailable, when all operating theaters lack capacity for the surgery. For these impossible days, $x_day[i][d]$ is set to 0.
+
+### Results
+
+| Instance | Resolution Time (s) | First Sol. Time (Bound) | No. of Solutions | Best Objective (S8) |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **i29** | 194  | 119 (208) | 6 | 203 |
+| **i28** | 407  | 301 (191) | 2 |190  |
+| **i25** | 406  | 29 (211)  | 41 | 101 |
+| **i20** | 506 | no solution found
+| **i15** | 207  | 14 (102)  | 36 | 67 |
+| **i10** | 207  | 21 (107)  | 44 | 64 |
+| **test01** | 26 | 1.47 (31)  | 18 | 8 |
+| **test09** | 60 | 17.2 (58)  | 7 | 52 |
+
+Result Analysis
+
+Overall, the solver does a pretty good job on most instances, even though it clearly hits its limits on the hardest problems.
+
+### Usage example
+```python -X utf8 .\projet.py -mydata=\test\test09.json -solve -s=all```
