@@ -1,12 +1,4 @@
-"""Frequency Allocation - OPL Section 2 model translated to PyCSP3.
-
-Original structure (Figure 1 in the paper):
-- one variable per transmitter,
-- intra-cell distance constraints,
-- inter-cell distance constraints.
-
-Added objective for the project requirement:
-- minimize the number of distinct frequencies used.
+"""1st problem : Frequency Allocation - OPL Section 2 model translated to PyCSP3.
 """
 
 from itertools import combinations, product
@@ -33,9 +25,7 @@ distance = data["distance"]
 transmitters = [(c, t) for c in range(nb_cells) for t in range(nb_trans[c])]
 id = {(c, t): i for i, (c, t) in enumerate(transmitters)}
 
-# OPL: var Freqs freq[Transmits], with Freqs = 1..nbFreqs
 freq = VarArray(size=len(transmitters), dom=range(1, nb_freqs + 1))
-
 
 satisfy(
     # intra-cell
